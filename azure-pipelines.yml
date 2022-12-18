@@ -1,0 +1,134 @@
+# ASP.NET
+# Build and test ASP.NET projects.
+# Add steps that publish symbols, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
+#tri
+trigger:
+- dev
+##########################build#############################
+stages:
+- stage: BuildApp
+  displayName: Building App
+  jobs:
+  - job: Build
+    pool:
+      name: Default
+    variables:
+    - name: BuildParameters.RestoreBuildProjects
+      value: '**/*.csproj'
+    - name: BuildParameters.TestProjects
+      value: '**/*[Tt]ests/*.csproj'
+
+    steps:
+      - task: DotNetCoreCLI@2
+        displayName: Restore
+        inputs:
+          command: restore
+          projects: $(BuildParameters.RestoreBuildProjects)
+      - task: DotNetCoreCLI@2
+        displayName: Build
+        inputs:
+          projects: $(BuildParameters.RestoreBuildProjects)
+          arguments: --configuration $(BuildConfiguration)
+      - task: DotNetCoreCLI@2
+        displayName: Test
+        inputs:
+          command: test
+          projects: $(BuildParameters.TestProjects)
+          arguments: --configuration $(BuildConfiguration)
+      - task: DotNetCoreCLI@2
+        displayName: Publish
+        inputs:
+          command: 'publish'
+          publishWebProjects: true
+          arguments: '--configuration $(BuildConfiguration) --output $(build.artifactstagingdirectory)'
+          zipAfterPublish: false
+          modifyOutputPath: false
+ 
+      - task: PublishBuildArtifacts@1
+        inputs:
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          ArtifactName: 'drop'
+          publishLocation: 'Container'
+
+###########################deploy to dev###########################################
+- stage: DeployToDev
+  displayName: deploy dev stage
+  jobs:
+  - job: Deploy
+    pool:
+      name: Default
+    steps:
+    - task: DownloadBuildArtifacts@1
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'drop'
+        downloadPath: '$(Pipeline.Workspace)'
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'Azure for Students (36163e0c-0da0-4adc-8a15-d7af0c407fa8)'
+        appType: 'webApp'
+        WebAppName: 'dotnet-dev'
+        packageForLinux: '$(Pipeline.Workspace)/drop'
+
+    - task: CreatePullRequest@1
+      inputs:
+        repoType: 'Azure DevOps'
+        repositorySelector: 'currentBuild'
+        sourceBranch: '$(Build.SourceBranch)'
+        targetBranch: 'main'
+        title: 'dev to main'
+
+#############deploy to qa#############################################################
+- stage: DeployToQA
+  displayName: deploy qa stage
+  jobs:
+  - deployment : Deploy
+    environment: qa
+    pool:
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:  
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'drop'
+              downloadPath: '$(Pipeline.Workspace)'
+          - task: AzureRmWebAppDeployment@4
+            inputs:
+              ConnectionType: 'AzureRM'
+              azureSubscription: 'Azure for Students (36163e0c-0da0-4adc-8a15-d7af0c407fa8)'
+              appType: 'webApp'
+              WebAppName: 'dotnet-qaa'
+              packageForLinux: '$(Pipeline.Workspace)/drop'
+
+###################deploy to prod###############################
+- stage: DeployToProd
+  displayName: deploy prod stage
+  jobs:
+  - deployment : Deploy
+    environment: prod
+    pool:
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'drop'
+              downloadPath: '$(Pipeline.Workspace)'
+          - task: AzureRmWebAppDeployment@4
+            inputs:
+              ConnectionType: 'AzureRM'
+              azureSubscription: 'Azure for Students (36163e0c-0da0-4adc-8a15-d7af0c407fa8)'
+              appType: 'webApp'
+              WebAppName: 'dotnetapp121'
+              packageForLinux: '$(Pipeline.Workspace)/drop'
