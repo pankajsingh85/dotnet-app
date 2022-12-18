@@ -14,9 +14,9 @@ stages:
     pool:
       name: Default
     variables:
-    - name: BuildParameters.RestoreBuildProjects
+    - name: RestoreBuildProjects
       value: '**/*.csproj'
-    - name: BuildParameters.TestProjects
+    - name: TestProjects
       value: '**/*[Tt]ests/*.csproj'
 
     steps:
@@ -24,24 +24,24 @@ stages:
         displayName: Restore
         inputs:
           command: restore
-          projects: $(BuildParameters.RestoreBuildProjects)
+          projects: $(RestoreBuildProjects)
       - task: DotNetCoreCLI@2
         displayName: Build
         inputs:
-          projects: $(BuildParameters.RestoreBuildProjects)
-          arguments: --configuration $(BuildConfiguration)
+          projects: $(RestoreBuildProjects)
+         
       - task: DotNetCoreCLI@2
         displayName: Test
         inputs:
           command: test
-          projects: $(BuildParameters.TestProjects)
-          arguments: --configuration $(BuildConfiguration)
+          projects: $(TestProjects)
+          
       - task: DotNetCoreCLI@2
         displayName: Publish
         inputs:
           command: 'publish'
           publishWebProjects: true
-          arguments: '--configuration $(BuildConfiguration) --output $(build.artifactstagingdirectory)'
+          arguments: ' --output $(build.artifactstagingdirectory)'
           zipAfterPublish: false
           modifyOutputPath: false
  
@@ -65,6 +65,7 @@ stages:
         downloadType: 'single'
         artifactName: 'drop'
         downloadPath: '$(Pipeline.Workspace)'
+        
     - task: AzureRmWebAppDeployment@4
       inputs:
         ConnectionType: 'AzureRM'
@@ -78,8 +79,8 @@ stages:
         repoType: 'Azure DevOps'
         repositorySelector: 'currentBuild'
         sourceBranch: '$(Build.SourceBranch)'
-        targetBranch: 'main'
-        title: 'dev to main'
+        targetBranch: 'master'
+        title: 'dev to master'
 
 #############deploy to qa#############################################################
 - stage: DeployToQA
