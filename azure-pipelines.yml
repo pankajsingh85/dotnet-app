@@ -29,13 +29,14 @@ stages:
         displayName: Build
         inputs:
           projects: $(RestoreBuildProjects)
-         
+
+ 
       - task: DotNetCoreCLI@2
         displayName: Test
         inputs:
           command: test
           projects: $(TestProjects)
-          
+
       - task: DotNetCoreCLI@2
         displayName: Publish
         inputs:
@@ -59,7 +60,7 @@ stages:
     pool:
       name: Default
     steps:
-    - task: DownloadBuildArtifacts@1
+    - task: DownloadBuildArtifacts@0
       inputs:
         buildType: 'current'
         downloadType: 'single'
@@ -69,9 +70,9 @@ stages:
     - task: AzureRmWebAppDeployment@4
       inputs:
         ConnectionType: 'AzureRM'
-        azureSubscription: 'Azure for Students (36163e0c-0da0-4adc-8a15-d7af0c407fa8)'
+        azureSubscription: 'Azure for Students(6536b5fd-c0ab-4e5a-bc8d-7ca256fdde1a)'
         appType: 'webApp'
-        WebAppName: 'dotnet-dev'
+        WebAppName: 'dotnet-dev121'
         packageForLinux: '$(Pipeline.Workspace)/drop'
 
     - task: CreatePullRequest@1
@@ -94,7 +95,7 @@ stages:
       runOnce:
         deploy:
           steps:  
-          - task: DownloadBuildArtifacts@1
+          - task: DownloadBuildArtifacts@0
             inputs:
               buildType: 'current'
               downloadType: 'single'
@@ -103,9 +104,9 @@ stages:
           - task: AzureRmWebAppDeployment@4
             inputs:
               ConnectionType: 'AzureRM'
-              azureSubscription: 'Azure for Students (36163e0c-0da0-4adc-8a15-d7af0c407fa8)'
+              azureSubscription: 'Azure for Students(6536b5fd-c0ab-4e5a-bc8d-7ca256fdde1a)'
               appType: 'webApp'
-              WebAppName: 'dotnet-qaa'
+              WebAppName: 'dotnetqaa121'
               packageForLinux: '$(Pipeline.Workspace)/drop'
 
 ###################deploy to prod###############################
@@ -120,7 +121,7 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: DownloadBuildArtifacts@1
+          - task: DownloadBuildArtifacts@0
             inputs:
               buildType: 'current'
               downloadType: 'single'
@@ -129,7 +130,7 @@ stages:
           - task: AzureRmWebAppDeployment@4
             inputs:
               ConnectionType: 'AzureRM'
-              azureSubscription: 'Azure for Students (36163e0c-0da0-4adc-8a15-d7af0c407fa8)'
+              azureSubscription: 'Azure for Students(6536b5fd-c0ab-4e5a-bc8d-7ca256fdde1a)'
               appType: 'webApp'
-              WebAppName: 'dotnetapp121'
+              WebAppName: 'dotnetapp1211'
               packageForLinux: '$(Pipeline.Workspace)/drop'
